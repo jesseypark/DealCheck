@@ -50,7 +50,7 @@ Skills are methodology files that encode domain expertise. Agents load them for 
 | **question-generation** | Gap analysis, prioritization scoring, integrated with an ETA due diligence reference bank |
 | **financial-discrepancy** | Cross-source conflict detection patterns (CIM vs P&L vs tax returns) |
 | **market-research** | Industry research methodology, comparable transaction sourcing, competitive landscape |
-| **deal-scorecard** | Dimension scoring, red flag classification (critical/warning/watch), HTML template |
+| **deal-scorecard** | Dimension scoring, red flag classification (critical/warning/watch), top 10 critical questions, HTML template |
 
 Skills encode methodology, not data. The scorecard and question-generation skills were originally used by dedicated agents, but those agents failed consistently — the orchestrator now generates scorecards and questions inline using the same skills, with better results.
 

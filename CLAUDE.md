@@ -175,8 +175,9 @@ DECISION CRITERIA (evaluate in order):
 
 5. Has enough data accumulated for a meaningful scorecard?
    → Generate scorecard INLINE (read deal-scorecard skill, produce .md + .html)
+   → Scorecard includes up to 10 critical questions (read question-generation skill)
 
-6. Are there gaps, conflicts, or new red flags that warrant questions?
+6. Are there gaps, conflicts, or new red flags that warrant a standalone question list?
    → Generate questions INLINE (read question-generation skill, produce .md)
 
 7. Did any agent return AGENT_REQUESTS that you haven't evaluated?
@@ -197,7 +198,7 @@ DECISION CRITERIA (evaluate in order):
 
 ### When the User Requests Analysis
 
-- "Score this deal" / "update scorecard" → Generate scorecard INLINE using `.claude/skills/deal-scorecard/SKILL.md`. Produce both .md and .html. For the HTML, read the CSS and structure from `.claude/skills/deal-scorecard/scorecard_template.html` — do not write CSS from scratch.
+- "Score this deal" / "update scorecard" → Generate scorecard INLINE using `.claude/skills/deal-scorecard/SKILL.md`. Produce both .md and .html. Every scorecard includes up to 10 critical questions (drawn from question-generation output or generated inline). For the HTML, read the CSS and structure from `.claude/skills/deal-scorecard/scorecard_template.html` — do not write CSS from scratch.
 - "What should I ask?" / "update questions" → Generate questions INLINE using `.claude/skills/question-generation/SKILL.md`
 - "Research the market" / "competitive analysis" → Spawn `market-researcher`
 - "Analyze the financials" / "run SDE reconstruction" → Spawn `financial-analyst` with ground-truth numbers

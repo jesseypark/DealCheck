@@ -93,9 +93,13 @@ CRITICAL UNKNOWNS:
 2. ...
 ```
 
-## Step 6: Top Questions
+## Step 6: Top 10 Critical Questions
 
-Pull the top 5 questions from the question-generation skill output (or generate them inline if question generation hasn't run recently).
+Include up to 10 critical questions in the scorecard, drawn from the question-generation skill output (or generated inline if question generation hasn't run recently). Group by priority tier (Priority / Important). Each question should include:
+- The exact question to ask (phrased conversationally for a seller/broker call)
+- Why it matters (what risk or unknown it addresses)
+
+These questions are a core part of the scorecard — they tell the user what to do next with the analysis. Always include them.
 
 ## Step 7: Overall Assessment
 
@@ -140,8 +144,13 @@ UNRESOLVED DISCREPANCIES:
 CRITICAL UNKNOWNS:
   [From Step 5]
 
-TOP QUESTIONS TO ASK NEXT:
-  [From Step 6]
+TOP 10 QUESTIONS TO ASK:
+  Priority (Score 15+):
+    1. "[Question]" → Why it matters
+    ...
+  Important (Score 10-14):
+    6. "[Question]" → Why it matters
+    ...
 
 ASSESSMENT:
   [From Step 7]

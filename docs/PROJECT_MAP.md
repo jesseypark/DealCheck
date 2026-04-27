@@ -103,9 +103,10 @@ reads CLAUDE.md → reads /docs/ → identifies the deal
     │    │                                                         │
     │    │  Enough data for scorecard?                             │
     │    │  → Orchestrator generates INLINE (.md + .html)          │
-    │    │    loads: deal-scorecard skill                          │
+    │    │    loads: deal-scorecard + question-generation skills   │
+    │    │    scorecard includes up to 10 critical questions       │
     │    │                                                         │
-    │    │  Gaps, conflicts, or red flags?                         │
+    │    │  Need standalone question list?                         │
     │    │  → Orchestrator generates questions INLINE (.md)        │
     │    │    loads: question-generation skill                     │
     │    └─────────────────────────────────────────────────────────┘
