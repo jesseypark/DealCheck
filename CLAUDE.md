@@ -196,6 +196,15 @@ DECISION CRITERIA (evaluate in order):
 1. Extract factual claims yourself and update deal_state.json (confidence 0.25-0.30 per verbal claims)
 2. Enter the reactive loop at Step 5 — evaluate what the new data changes
 
+### When Starting a New Deal
+
+The user drops files and says "new deal" (or `/new-deal`). Read the `/new-deal` skill at `.claude/skills/new-deal/SKILL.md` and follow it.
+
+Key rules:
+- **All files uploaded together are for ONE deal.** Never split uploads across multiple deals.
+- **The user names the folder.** If they included a name in their message, use it. Otherwise ask: "What should I call the folder for this deal?" Do not guess from documents.
+- After folder creation and file moves, hand off to the standard reactive orchestration loop (preprocess → establish ground truth → extract → analyze).
+
 ### When the User Requests Analysis
 
 - "Score this deal" / "update scorecard" → Generate scorecard INLINE using `.claude/skills/deal-scorecard/SKILL.md`. Produce both .md and .html. Every scorecard includes up to 10 critical questions (drawn from question-generation output or generated inline). For the HTML, read the CSS and structure from `.claude/skills/deal-scorecard/scorecard_template.html` — do not write CSS from scratch.
