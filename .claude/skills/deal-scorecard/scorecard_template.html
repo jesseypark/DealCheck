@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Scorecard — {{DEAL_NAME}}</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181b24;
+    --surface2: #1e222d;
+    --border: #2a2f3c;
+    --text: #e4e6ed;
+    --text-dim: #8b8fa3;
+    --accent: #6c8cff;
+    --critical: #ff4d6a;
+    --critical-bg: rgba(255,77,106,.08);
+    --warning: #ffb84d;
+    --warning-bg: rgba(255,184,77,.08);
+    --watch: #4dd88a;
+    --watch-bg: rgba(77,216,138,.08);
+    --bar-fill: #6c8cff;
+    --bar-bg: #262a36;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: .25rem;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: .9rem;
+  }
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.5rem;
+    font-size: .85rem;
+    color: var(--text-dim);
+    margin-top: .75rem;
+  }
+  .header-meta span { white-space: nowrap; }
+  .tag {
+    display: inline-block;
+    padding: .15rem .55rem;
+    border-radius: 4px;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .tag-price { background: rgba(108,140,255,.15); color: var(--accent); }
+  .tag-source { background: rgba(255,184,77,.12); color: var(--warning); }
+  .tag-pass { background: rgba(77,216,138,.15); color: var(--watch); }
+  .tag-fail { background: rgba(255,77,106,.15); color: var(--critical); }
+  .tag-marginal { background: rgba(255,184,77,.15); color: var(--warning); }
+
+  /* ── Sections ── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  /* ── Deal Clarity ── */
+  .clarity-overall {
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+  }
+  .clarity-pct {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .clarity-pct-low { color: var(--critical); }
+  .clarity-pct-mid { color: var(--warning); }
+  .clarity-pct-high { color: var(--watch); }
+  .clarity-label {
+    font-size: .9rem;
+    color: var(--text-dim);
+  }
+  .dimension-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .4rem 0;
+  }
+  .dimension-name {
+    width: 180px;
+    font-size: .82rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .dimension-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--bar-bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .dimension-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .6s ease;
+  }
+  .dimension-pct {
+    width: 42px;
+    text-align: right;
+    font-size: .82rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .dimension-note {
+    font-size: .7rem;
+    color: var(--text-dim);
+    width: 78px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .confidence-note {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    background: var(--warning-bg);
+    border-left: 3px solid var(--warning);
+    border-radius: 0 6px 6px 0;
+    font-size: .82rem;
+    color: var(--text-dim);
+  }
+
+  /* ── Red Flags ── */
+  .flag-group { margin-bottom: 1.5rem; }
+  .flag-group:last-child { margin-bottom: 0; }
+  .flag-group-header {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .75rem;
+    font-weight: 700;
+    font-size: .85rem;
+  }
+  .flag-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .flag-dot-critical { background: var(--critical); box-shadow: 0 0 8px var(--critical); }
+  .flag-dot-warning  { background: var(--warning);  box-shadow: 0 0 8px rgba(255,184,77,.4); }
+  .flag-dot-watch    { background: var(--watch);    box-shadow: 0 0 8px rgba(77,216,138,.3); }
+  .flag-card {
+    padding: 1rem 1.15rem;
+    border-radius: 8px;
+    margin-bottom: .6rem;
+    font-size: .85rem;
+  }
+  .flag-card-critical { background: var(--critical-bg); border-left: 3px solid var(--critical); }
+  .flag-card-warning  { background: var(--warning-bg);  border-left: 3px solid var(--warning); }
+  .flag-card-watch    { background: var(--watch-bg);    border-left: 3px solid var(--watch); }
+  .flag-title {
+    font-weight: 700;
+    margin-bottom: .35rem;
+  }
+  .flag-detail { color: var(--text-dim); font-size: .82rem; }
+  .flag-action {
+    margin-top: .5rem;
+    font-size: .78rem;
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left;
+    font-weight: 600;
+    padding: .5rem .6rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  td {
+    padding: .5rem .6rem;
+    border-bottom: 1px solid rgba(42,47,60,.5);
+  }
+  tr:last-child td { border-bottom: none; }
+  .num { text-align: right; }
+  .highlight { color: var(--accent); font-weight: 600; }
+  .danger { color: var(--critical); font-weight: 600; }
+  .good { color: var(--watch); font-weight: 600; }
+
+  /* ── DSCR Cards ── */
+  .dscr-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    margin-top: 1rem;
+  }
+  .dscr-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .dscr-label {
+    font-size: .72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .4rem;
+  }
+  .dscr-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .dscr-fail { color: var(--critical); }
+  .dscr-marginal { color: var(--warning); }
+  .dscr-pass { color: var(--watch); }
+  .dscr-note {
+    font-size: .72rem;
+    color: var(--text-dim);
+    margin-top: .25rem;
+  }
+
+  /* ── Market Grid ── */
+  .market-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+  .market-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .market-card-label {
+    font-size: .72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .35rem;
+  }
+  .market-card-value {
+    font-size: .9rem;
+    font-weight: 600;
+  }
+  .market-card-detail {
+    font-size: .78rem;
+    color: var(--text-dim);
+    margin-top: .25rem;
+  }
+
+  /* ── Discrepancies ── */
+  .discrepancy {
+    padding: .85rem 1rem;
+    background: var(--surface2);
+    border-left: 3px solid var(--warning);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: .6rem;
+    font-size: .82rem;
+  }
+  .discrepancy-critical { border-left-color: var(--critical); }
+  .discrepancy-title { font-weight: 700; margin-bottom: .2rem; }
+  .discrepancy-detail { color: var(--text-dim); font-size: .78rem; }
+
+  /* ── Unknown Cards ── */
+  .unknown-card {
+    display: flex;
+    gap: 1rem;
+    padding: .85rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: .5rem;
+    align-items: flex-start;
+  }
+  .unknown-rank {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent);
+    width: 24px;
+    flex-shrink: 0;
+  }
+  .unknown-body { flex: 1; }
+  .unknown-title { font-weight: 600; font-size: .85rem; }
+  .unknown-scores {
+    font-size: .72rem;
+    color: var(--text-dim);
+    margin-top: .15rem;
+  }
+  .unknown-action {
+    font-size: .78rem;
+    color: var(--accent);
+    margin-top: .25rem;
+    font-style: italic;
+  }
+
+  /* ── Assessment ── */
+  .assessment { font-size: .88rem; line-height: 1.7; }
+  .assessment p { margin-bottom: .8rem; }
+  .bottom-line {
+    padding: 1rem;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: .85rem;
+  }
+  .bottom-line-label {
+    font-size: .72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: .35rem;
+  }
+
+  /* ── Callout boxes ── */
+  .callout {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    font-size: .82rem;
+  }
+  .callout-critical { background: var(--critical-bg); border-left: 3px solid var(--critical); }
+  .callout-warning { background: var(--warning-bg); border-left: 3px solid var(--warning); }
+  .callout-info { background: rgba(108,140,255,.08); border-left: 3px solid var(--accent); }
+</style>
+</head>
+<body>
+
+<!--
+  SCORECARD HTML TEMPLATE
+  =======================
+  This template provides the CSS and structural patterns for deal scorecards.
+  When generating a new HTML scorecard, READ this file for the CSS and element
+  patterns, then write the scorecard content using these classes.
+
+  Do NOT copy this file and fill in placeholders. Instead, use the CSS from
+  this <style> block and compose the HTML sections needed for the specific deal.
+
+  SECTIONS (include as applicable):
+  1. .header          — Deal name, meta tags (price, source, SBA verdict)
+  2. Deal Clarity     — .clarity-overall + .dimension-row bars
+  3. Red Flags        — .flag-group > .flag-card (critical/warning/watch)
+  4. SDE Table        — <table> with .num, .highlight, .danger, .good
+  5. Valuation        — <table> with ranges
+  6. SBA Feasibility  — .dscr-grid > .dscr-card (fail/marginal/pass)
+  7. Market Context   — .market-grid > .market-card
+  8. Discrepancies    — .discrepancy / .discrepancy-critical
+  9. Critical Unknowns — .unknown-card with .unknown-rank
+  10. Assessment       — .assessment + .bottom-line
+
+  COLOR CODING:
+  - var(--critical) / .danger / .dscr-fail  — red, bad values
+  - var(--warning) / .dscr-marginal         — amber, concerning
+  - var(--watch) / .good / .dscr-pass       — green, positive
+  - var(--accent) / .highlight              — blue, neutral emphasis
+
+  TAGS: .tag-price (blue), .tag-source (amber), .tag-pass (green),
+        .tag-fail (red), .tag-marginal (amber)
+
+  CALLOUTS: .callout-critical (red bg), .callout-warning (amber bg),
+            .callout-info (blue bg)
+-->
+
+<!-- Example structure (delete when generating actual scorecard): -->
+
+<div class="header">
+  <h1>{{DEAL_NAME}}</h1>
+  <div class="header-sub">{{ENTITY_NAME}} — {{ENTITY_DETAIL}}</div>
+  <div class="header-meta">
+    <span>{{INDUSTRY}}</span>
+    <span>{{LOCATION}}</span>
+    <span>{{EMPLOYEES}} employees</span>
+    <span class="tag tag-price">Asking: ${{PRICE}}</span>
+    <span class="tag tag-source">{{DATA_SOURCE}}</span>
+    <span class="tag tag-fail">SBA: {{SBA_VERDICT}}</span>
+    <span>Updated: {{DATE}}</span>
+  </div>
+</div>
+
+<!-- Repeat pattern for each section using the CSS classes above -->
+
+</body>
+</html>

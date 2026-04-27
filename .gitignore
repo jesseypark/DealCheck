@@ -1,0 +1,51 @@
+# Deal data — NEVER commit (NDA-protected confidential information)
+/deals/
+
+# Session-specific docs containing real deal names and financials
+/docs/HANDOFF.md
+/docs/SESSION_LOG.md
+/docs/PERFORMANCE_LOG.md
+/docs/PRINT_PARTNERS_POSTMORTEM.md
+/docs/DECISIONS.md
+/docs/AGENTIC_ANALYSIS.md
+
+# Environment and credentials
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Local Claude Code settings that may contain credentials
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs that might contain sensitive data
+*.log
+
+# Temporary files
+tmp/
+temp/
