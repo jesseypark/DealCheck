@@ -28,14 +28,29 @@ Document arrives
 
 ### The Four Agents
 
-| Agent | Why It Exists | Error Rate |
-|-------|--------------|------------|
-| **document-parser** | Multi-document ingestion with cross-source conflict detection | 67% (caught by orchestrator) |
-| **financial-analyst** | Deep SDE reconstruction, three valuation views, SBA feasibility | 100% on numerics (caught by orchestrator) |
-| **market-researcher** | Web search for industry trends, competitors, comparable transactions | 0% |
-| **verifier** | Systematic cross-check of extracted data against source documents | N/A (new) |
+| Agent | Why It Exists |
+|-------|--------------|
+| **document-parser** | Multi-document ingestion with cross-source conflict detection |
+| **financial-analyst** | SDE reconstruction, three valuation views, SBA feasibility, scenario modeling |
+| **market-researcher** | Web search for industry trends, competitors, comparable transactions |
+| **verifier** | Systematic cross-check of extracted data against source documents |
 
-Yes, the financial-analyst has a 100% error rate on numeric calculations. It's also the highest-value agent in the system. More on why below.
+The orchestrator verifies every agent's output before persisting anything. The financial-analyst is the highest-value agent despite requiring the most correction — its strength is interpretation and pattern recognition (finding hidden revenue declines, modeling franchise fee impacts, stress-testing SBA scenarios), not arithmetic. Ground-truth prompting (described below) channels that strength while constraining its weakness.
+
+### The Six Skills
+
+Skills are methodology files that encode domain expertise. Agents load them for context; the orchestrator also uses them directly for inline work.
+
+| Skill | What It Encodes |
+|-------|----------------|
+| **sde-reconstruction** | Add-back legitimacy rules, three SDE tiers (conservative/moderate/aggressive), owner comp handling |
+| **document-parsing** | Extraction rules, anti-hallucination directives, multi-source conflict handling |
+| **question-generation** | Gap analysis, prioritization scoring, integrated with an ETA due diligence reference bank |
+| **financial-discrepancy** | Cross-source conflict detection patterns (CIM vs P&L vs tax returns) |
+| **market-research** | Industry research methodology, comparable transaction sourcing, competitive landscape |
+| **deal-scorecard** | Dimension scoring, red flag classification (critical/warning/watch), HTML template |
+
+Skills encode methodology, not data. The scorecard and question-generation skills were originally used by dedicated agents, but those agents failed consistently — the orchestrator now generates scorecards and questions inline using the same skills, with better results.
 
 ### The Knowledge Model
 
@@ -54,62 +69,31 @@ Every data point carries a confidence score by source type: tax returns (0.95) >
 
 ## How It Evolved
 
-This project went through several architectural phases, each driven by real failures on real deals. The progression from "let agents do everything" to "let agents do what they're good at" is the core story.
+Each architectural change was driven by a real failure on a real deal. The progression went from "let agents do everything" to "let agents do what they're actually good at."
 
-### Phase 1: Inline Everything (Session 1-2)
+### Started with a 5-agent pipeline
 
-The first deal was processed entirely by the main Claude Code session. No agents were spawned. The orchestrator read the CIM, extracted 200+ data points, built the scorecard, and generated questions — all inline. It worked, but wouldn't scale to multi-document deals.
+The first version had five specialist agents — document-parser, financial-analyst, market-researcher, deal-scorer, and question-generator — running in a fixed sequence. Every deal got the same treatment: preprocess → extract → spawn all agents → synthesize → present.
 
-### Phase 2: The 5-Agent Pipeline (Session 3)
+### A hallucination broke everything
 
-Built a fixed pipeline with five specialist agents: document-parser, financial-analyst, market-researcher, deal-scorer, and question-generator. Every deal followed the same sequence: preprocess → extract → spawn agents → synthesize → present.
+On the second deal, the document-parser encountered a financial table rendered as an image. The extracted text was blank. Instead of reporting the data as missing, the parser fabricated an entire plausible dataset — asking price, location, broker name, employee counts, revenue, SDE — none of which existed in the document. All four downstream agents consumed the fabricated data and produced confident but completely wrong analysis.
 
-### Phase 3: Catastrophic Failure and Guardrail Overhaul (Session 4)
+This led to the system's most important architectural rule: **agents are read-only**. They return summaries; the orchestrator verifies against source documents and writes all files. Anti-hallucination rules were embedded in every agent, and "MISSING" became the mandatory answer for unextractable data.
 
-The second deal tested the full pipeline. The document-parser encountered a financial table rendered as an image — the extracted text showed only "Confidential and Proprietary." Instead of reporting the data as missing, the parser fabricated an entire plausible dataset: an asking price, a location, a broker name, employee counts, revenue figures, and SDE calculations. None of it existed in the document.
+### Two agents couldn't earn their keep
 
-All four downstream agents consumed the fabricated data and produced confident-sounding but completely wrong analysis. The user caught the hallucination by questioning a specific number.
+Over the next four deals, the deal-scorer and question-generator failed on every run — fabricating names, inventing figures, building parallel schemas instead of scorecards, reading stale data. The orchestrator was rewriting their entire output each time. Both were retired. The orchestrator now generates scorecards and questions inline using the same skill files, with better results and no correction cycle.
 
-This led to a systemic overhaul:
-- **Agents became read-only** — they return summaries, the orchestrator writes all files
-- **Orchestrator verification became mandatory** — read source documents before spawning any agent
-- **Anti-hallucination rules** were embedded in every agent definition
-- **"MISSING" became the required answer** for unextractable data
+The financial-analyst had a different problem: strong analytical output (finding hidden revenue declines, modeling SBA scenarios, assessing add-back legitimacy) but unreliable numeric inputs. The market-researcher, by contrast, had a 0% error rate across all deals.
 
-### Phase 4: Agents That Keep Failing (Sessions 5-7)
+### Redesigned around what actually worked
 
-Over the next four deals, a pattern emerged:
+Four changes turned the system from a fixed pipeline into something genuinely adaptive:
 
-- The **deal-scorer** fabricated names, invented financial figures, built parallel schemas instead of scorecards, and ignored data that was clearly present in the deal state. Every run required the orchestrator to rewrite the output.
-- The **question-generator** read stale data formats and produced questions the orchestrator always rewrote.
-- The **financial-analyst** used wrong numbers on every run — fabricating officer compensation figures, misclassifying add-backs, inventing line items that didn't exist in the source documents.
-- The **market-researcher** had a 0% error rate across all deals.
+**Reactive orchestration loop** — the system now evaluates deal state after every change and executes the highest-value next action, rather than running the same sequence for every deal. A deal with tax returns gets different treatment than a deal with one CIM.
 
-The orchestrator was doing double work: spawning agents and then correcting their output. For two of the five agents, the correction was a complete rewrite.
-
-### Phase 5: Honest Assessment (Session 10)
-
-Stepped back and asked: is this system actually agentic?
-
-The honest answer was no. It was an **orchestrated specialist pipeline** — closer to chaining AI calls together than to agentic AI. The orchestrator followed a fixed pipeline regardless of what the deal needed. Agents were isolated one-shot workers with no communication between them. There were no feedback loops, no replanning, no information-seeking behavior.
-
-But the system's value was real — it lived in the methodology (SDE rules, valuation framework, red flag detection), the knowledge model (8 dimensions, conflict tracking, confidence scoring), and the orchestrator's judgment (catching hallucinations, discovering things like a related-party lease buried in a document appendix). The agent architecture was the least valuable part.
-
-### Phase 6: The Agentic Redesign (Session 8)
-
-Four changes, each earning its slot:
-
-1. **Reactive orchestration loop** — replaced the fixed pipeline with a reasoning loop that evaluates deal state after every change and executes the highest-value next action. A deal with tax returns gets different treatment than a deal with one CIM.
-
-2. **Retired deal-scorer and question-generator** — both agents failed on every deal. The orchestrator generates scorecards and questions inline using the same skill files the agents were loading. Better output, fewer tokens, no correction cycle.
-
-3. **Added a verifier agent** — systematic cross-checking that doesn't depend on the orchestrator remembering to look at the right page. Catches fabrication structurally before downstream agents see it.
-
-4. **Agent-triggered agents** — agents can now return structured requests for other agents. The financial-analyst discovers a revenue discrepancy and requests the verifier. The market-researcher discovers a franchise and requests the financial-analyst to model franchise fees. The orchestrator evaluates each request and dispatches only when it would produce genuine value.
-
-### Phase 7: Ground-Truth Prompting (Session 9-10)
-
-The financial-analyst's 100% numeric error rate had a consistent cause: it would read deal_state.json, not find a number (or find it in an unexpected format), and substitute its own fabrication. The fix was **ground-truth prompting** — the orchestrator includes verified source numbers directly in the agent's prompt:
+**Ground-truth prompting** — the financial-analyst's numeric errors had a consistent cause: it would read deal_state.json, not find a number in the expected format, and substitute a fabrication. The fix was including verified source numbers directly in the prompt:
 
 ```
 GROUND-TRUTH NUMBERS (use these exactly):
@@ -120,34 +104,24 @@ GROUND-TRUTH NUMBERS (use these exactly):
 If your analysis uses a different number, STOP and explain the discrepancy.
 ```
 
-On the first deal after implementing this, the financial-analyst's SDE reconstruction matched the CIM's independently calculated figure within $364. The agent still can't do arithmetic reliably, but anchoring it with verified numbers channels its analytical strength (interpreting trends, assessing add-back legitimacy, modeling scenarios) while constraining its weakness (making up inputs).
+After implementing this, the financial-analyst's SDE reconstruction matched independently calculated figures within $364. The agent still needs orchestrator verification on arithmetic, but anchoring it with verified inputs channels its analytical strength while constraining its weakness.
 
-### Phase 8: Efficiency Improvements (Session 9b)
+**Agent-triggered agents** — agents can now request work from other agents through the orchestration loop. The financial-analyst discovers a revenue discrepancy and requests the verifier. The market-researcher discovers a franchise and requests the financial-analyst to model franchise fees. The orchestrator evaluates each request and dispatches only when it would produce genuine value.
 
-A performance postmortem on a 6-document deal revealed:
-- 29% of image reads were duplicates caused by context compaction
-- The document-parser misread tax return revenue by $1M+
-- Interleaving image reads with agent spawns caused context overflow
+**Two-phase extract-then-analyze** — a performance postmortem revealed that interleaving document image reads with agent spawns caused context overflow (29% of image reads were duplicates after compaction). Separating extraction from analysis eliminated this entirely.
 
-Three process changes:
-1. **Write to deal_state.json immediately after each page read** — no scratch files, data survives context compaction
-2. **Two-phase extract-then-analyze** — complete all document extraction before spawning any analysis agents, keeping images out of context during analysis
-3. **Skip the document-parser for image-based tax returns** — orchestrator direct reads are more reliable for scanned documents
+The result: fewer agents doing more meaningful work, not more agents doing busywork.
 
 ## Why Not Make Everything Agentic?
 
 The deal analysis domain has properties that work against full autonomy:
 
-- **NDA-protected data** — every document is confidential. An autonomous agent that decides to search the web or email a broker with deal details could violate confidentiality. The human must remain the gatekeeper for external communication.
+- **NDA-protected data** — every document is confidential. An autonomous agent that searches the web or contacts a broker with deal details could violate confidentiality.
 - **High cost of errors** — a fabricated SDE figure could lead to acquiring a bad business. The hallucination incident proved this isn't theoretical.
 - **Irregular timing** — documents arrive when sellers send them. There's nothing for an agent to do between documents.
-- **Small action space** — the system reads documents, extracts data, runs analysis, generates output. It doesn't take actions in the world that produce new information to learn from.
+- **Small action space** — the system reads, extracts, analyzes, and generates output. It doesn't take actions in the world that produce new information to learn from.
 
 The system is agentic where it helps (reactive decision-making, agent-triggered agents, information-seeking during market research) and deterministic where reliability matters (the orchestrator owns all writes, verifies all output, and maintains the security air gap between raw documents and financial analysis).
-
-The agents that survived the cuts — document-parser, financial-analyst, market-researcher, and verifier — each exist because they do something the orchestrator can't do as well on its own: multi-document cross-referencing, deep financial modeling, web research, and systematic verification. The agents that were retired — deal-scorer and question-generator — were doing tasks the orchestrator does better inline.
-
-"More agentic" turned out to mean fewer agents doing more meaningful work, not more agents doing busywork.
 
 ## Project Structure
 
