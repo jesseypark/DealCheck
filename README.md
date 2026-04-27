@@ -35,7 +35,9 @@ Document arrives
 | **market-researcher** | Web search for industry trends, competitors, comparable transactions |
 | **verifier** | Systematic cross-check of extracted data against source documents |
 
-The orchestrator verifies every agent's output before persisting anything. The financial-analyst is the highest-value agent despite requiring the most correction — its strength is interpretation and pattern recognition (finding hidden revenue declines, modeling franchise fee impacts, stress-testing SBA scenarios), not arithmetic. Ground-truth prompting (described below) channels that strength while constraining its weakness.
+The orchestrator verifies every agent's output before persisting anything.
+
+**A note on the financial-analyst:** This agent can't reliably read numbers out of a complex JSON file on its own. On every deal, it pulled the wrong figure from deal_state.json or made one up when it couldn't find what it was looking for. But the analysis it builds *on top of* those numbers — interpreting trends, judging whether an add-back is legitimate, modeling SBA loan scenarios, spotting risks — is consistently the most valuable output in the system. The problem was never bad analysis, it was bad input retrieval. Ground-truth prompting (described below) mostly fixed this by feeding verified numbers directly into the prompt. Deterministic Python calculators are planned for v2 to handle all the number work, letting the agent focus entirely on what it's good at.
 
 ### The Six Skills
 
@@ -85,7 +87,7 @@ This led to the system's most important architectural rule: **agents are read-on
 
 Over the next four deals, the deal-scorer and question-generator failed on every run — fabricating names, inventing figures, building parallel schemas instead of scorecards, reading stale data. The orchestrator was rewriting their entire output each time. Both were retired. The orchestrator now generates scorecards and questions inline using the same skill files, with better results and no correction cycle.
 
-The financial-analyst had a different problem: strong analytical output (finding hidden revenue declines, modeling SBA scenarios, assessing add-back legitimacy) but unreliable numeric inputs. The market-researcher, by contrast, had a 0% error rate across all deals.
+The financial-analyst had a different problem: its analysis was genuinely useful, but it kept pulling the wrong numbers from deal_state.json to build that analysis on. The market-researcher, by contrast, never needed correction across any deal.
 
 ### Redesigned around what actually worked
 
@@ -93,7 +95,7 @@ Four changes turned the system from a fixed pipeline into something genuinely ad
 
 **Reactive orchestration loop** — the system now evaluates deal state after every change and executes the highest-value next action, rather than running the same sequence for every deal. A deal with tax returns gets different treatment than a deal with one CIM.
 
-**Ground-truth prompting** — the financial-analyst's numeric errors had a consistent cause: it would read deal_state.json, not find a number in the expected format, and substitute a fabrication. The fix was including verified source numbers directly in the prompt:
+**Ground-truth prompting** — the financial-analyst's input problem had a consistent cause: it would look for a number in deal_state.json, not find it in the expected format, and make one up. The fix was feeding verified numbers directly into the prompt:
 
 ```
 GROUND-TRUTH NUMBERS (use these exactly):
@@ -104,7 +106,7 @@ GROUND-TRUTH NUMBERS (use these exactly):
 If your analysis uses a different number, STOP and explain the discrepancy.
 ```
 
-After implementing this, the financial-analyst's SDE reconstruction matched independently calculated figures within $364. The agent still needs orchestrator verification on arithmetic, but anchoring it with verified inputs channels its analytical strength while constraining its weakness.
+After implementing this, the financial-analyst's SDE reconstruction matched independently calculated figures within $364. Give it the right inputs and its analysis is solid.
 
 **Agent-triggered agents** — agents can now request work from other agents through the orchestration loop. The financial-analyst discovers a revenue discrepancy and requests the verifier. The market-researcher discovers a franchise and requests the financial-analyst to model franchise fees. The orchestrator evaluates each request and dispatches only when it would produce genuine value.
 
