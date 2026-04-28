@@ -42,7 +42,16 @@ For each red flag detected by the financial analyst or other agents:
 - Revenue decline: "Walk me through what happened between [peak year] and [current year]. What changed in the market or the business?"
 - High owner hours: "Describe a typical work week for you. What would need to change if you weren't here every day?"
 
-### E. Forward-Looking Questions
+### E. Family Members in the Business (ALWAYS ASK)
+Family members are a dual risk — flight risk (they leave post-acquisition) and management risk (they hold institutional knowledge, crew relationships, or customer relationships that don't transfer). This question must appear on every deal's question list regardless of whether the documents mention family:
+- Who in the business is a family member of the owner? What roles do they fill?
+- Are they on payroll or taking distributions? At what cost?
+- Would they stay post-acquisition, and under what terms?
+- What functions would need to be replaced if they leave?
+
+**Scoring guidance:** Minimum deal-breaker potential of 5 (higher if documents hint at multiple shareholders, "replace one owner" deductions, or family-sounding names on payroll). Analytical unlock: 7+ (affects SDE add-backs, replacement cost estimates, transition planning).
+
+### F. Forward-Looking Questions
 Questions about risks and sustainability that no document will answer:
 - "What's the biggest competitive threat you see in the next 2-3 years?"
 - "If you could change one thing about the business, what would it be?"

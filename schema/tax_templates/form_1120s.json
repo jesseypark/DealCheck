@@ -1,0 +1,196 @@
+{
+  "_description": "Extraction template for Form 1120-S (S-Corporation). Read this before processing any 1120-S tax return. Extract every field listed below, marking N/A if not present. Cross-check validation rules after extraction.",
+  "_usage": "The orchestrator reads this template, then systematically reads each page image and extracts the listed fields. After extraction, run the validation cross-checks.",
+
+  "form_1120s_page1": {
+    "description": "Main return - income and deductions",
+    "fields": {
+      "tax_year": "Calendar year or fiscal year dates",
+      "business_name": "Line A",
+      "ein": "Line B",
+      "date_incorporated": "Line E",
+      "address": "Street, City, State, ZIP",
+      "total_assets_eoy": "Line F",
+      "accounting_method": "Line G (Cash / Accrual / Other)",
+      "num_shareholders": "Line H",
+      "line_1a_gross_receipts": "Gross receipts or sales",
+      "line_1b_returns_allowances": "Returns and allowances",
+      "line_1c_net_receipts": "1a minus 1b",
+      "line_2_cogs": "Cost of goods sold (from Form 1125-A)",
+      "line_3_gross_profit": "Line 1c minus line 2",
+      "line_4_net_gain_loss": "From Form 4797",
+      "line_5_other_income": "Other income (loss)",
+      "line_6_total_income": "Sum of lines 3-5",
+      "line_7_officer_compensation": "SDE-CRITICAL: always add back",
+      "line_8_salaries_wages": "Exclude officer comp (already on line 7)",
+      "line_9_repairs_maintenance": "",
+      "line_10_bad_debts": "",
+      "line_11_rents": "",
+      "line_12_taxes_licenses": "",
+      "line_13_interest": "SDE-CRITICAL: always add back",
+      "line_14_depreciation": "SDE-CRITICAL: always add back (from Form 4562)",
+      "line_15_depletion": "",
+      "line_16_advertising": "",
+      "line_17_pensions_profit_sharing": "SDE-RELEVANT: add back if owner benefit",
+      "line_18_employee_benefit_programs": "",
+      "line_19_other_deductions": "See attached statement — extract detail",
+      "line_20_total_deductions": "Sum of lines 7-19",
+      "line_21_ordinary_business_income": "SDE-CRITICAL: this is the starting point for SDE reconstruction",
+      "signer_name": "Who signed the return",
+      "signer_title": "Title (Managing Member, President, etc.)",
+      "preparer_name": "Paid preparer name",
+      "preparer_firm": "Paid preparer firm name",
+      "preparer_address": ""
+    },
+    "validation": [
+      "line_3 = line_1c - line_2",
+      "line_6 = line_3 + line_4 + line_5",
+      "line_21 = line_6 - line_20",
+      "Cross-check line_1a against CIM revenue for same year (>5% = flag)",
+      "Cross-check line_7 against CIM officer comp (>5% = flag)",
+      "Cross-check line_21 against CIM net income (>5% = flag)"
+    ]
+  },
+
+  "schedule_b": {
+    "description": "Other Information - page 2-3 of 1120-S",
+    "fields": {
+      "accounting_method": "Confirm matches page 1",
+      "business_activity": "e.g., Construction",
+      "product_or_service": "e.g., Service",
+      "s_election_terminated": "Yes/No — flag if Yes",
+      "shareholder_ownership_table": "Names, EIN/SSN, % ownership, dates"
+    }
+  },
+
+  "schedule_k": {
+    "description": "Shareholders' Pro Rata Share Items - page 3-4",
+    "fields": {
+      "line_1_ordinary_business_income": "Should match page 1 line 21",
+      "line_3_interest_income": "Rental, portfolio, other interest",
+      "line_4_dividends": "",
+      "line_10_section_179": "SDE-RELEVANT: check if large deduction",
+      "line_11_section_179_deduction": "From Form 4562",
+      "line_16a_tax_exempt_interest": "",
+      "line_16b_nondeductible_expenses": "Flag — may contain owner benefits",
+      "line_16d_distributions": "SDE-RELEVANT: distributions to shareholders",
+      "line_17a_investment_income": "",
+      "line_18_income_reconciliation": "Should approximate net income per books"
+    },
+    "validation": [
+      "line_1 should match page 1 line 21"
+    ]
+  },
+
+  "schedule_l": {
+    "description": "Balance Sheets per Books - page 4",
+    "fields": {
+      "assets": {
+        "line_1_cash": {"boy": null, "eoy": null},
+        "line_2a_trade_notes_ar": {"boy": null, "eoy": null},
+        "line_3_inventories": {"boy": null, "eoy": null},
+        "line_5_tax_exempt_securities": {"boy": null, "eoy": null},
+        "line_9a_buildings_depreciable_assets_gross": {"boy": null, "eoy": null},
+        "line_9b_accumulated_depreciation": {"boy": null, "eoy": null},
+        "line_9_net": {"boy": null, "eoy": null},
+        "line_14_other_assets": {"boy": null, "eoy": null},
+        "line_15_total_assets": {"boy": null, "eoy": null}
+      },
+      "liabilities_equity": {
+        "line_16_accounts_payable": {"boy": null, "eoy": null},
+        "line_17_mortgages_notes_lt1yr": {"boy": null, "eoy": null},
+        "line_18_other_current_liabilities": {"boy": null, "eoy": null},
+        "line_19_loans_from_shareholders": {"boy": null, "eoy": null},
+        "line_20_mortgages_notes_gt1yr": {"boy": null, "eoy": null},
+        "line_21_other_liabilities": {"boy": null, "eoy": null},
+        "line_22_capital_stock": {"boy": null, "eoy": null},
+        "line_24_retained_earnings": {"boy": null, "eoy": null},
+        "line_27_total_liabilities_equity": {"boy": null, "eoy": null}
+      }
+    },
+    "validation": [
+      "line_15 (total assets) should equal line_27 (total L&E)",
+      "line_9_net = line_9a - line_9b",
+      "Current year BOY should match prior year EOY (if both returns available)",
+      "Flag if line_3 (inventories) is $0 but CIM claims inventory value",
+      "Flag if line_19 (shareholder loans) changed significantly year-over-year"
+    ]
+  },
+
+  "schedule_m1": {
+    "description": "Reconciliation of Income per Books With Income per Return - page 5",
+    "fields": {
+      "line_1_net_income_per_books": "May differ from line 21 by non-deductible items",
+      "line_5_expenses_on_books_not_return": "Detail: depreciation diff, non-deductible items",
+      "line_8_income_per_return": "Should match Schedule K line 18"
+    },
+    "validation": [
+      "line_8 should equal Schedule K line 18",
+      "If line_5 is material, extract the detail — often contains owner benefits classified differently"
+    ]
+  },
+
+  "schedule_m2": {
+    "description": "Accumulated Adjustments Account - page 5",
+    "fields": {
+      "line_1_balance_boy": "Should match prior year EOY",
+      "line_2_ordinary_income": "Should match Schedule K line 1",
+      "line_3_other_additions": "Detail if material",
+      "line_5_other_deductions": "Detail if material",
+      "line_7_distributions": "Should match Schedule K line 16d",
+      "line_8_balance_eoy": "Should match Schedule L line 24 retained earnings"
+    },
+    "validation": [
+      "line_8 should approximately equal Schedule L line 24 (retained earnings EOY)",
+      "line_7 should match Schedule K line 16d"
+    ]
+  },
+
+  "form_1125a": {
+    "description": "Cost of Goods Sold",
+    "fields": {
+      "line_1_inventory_boy": "",
+      "line_2_purchases": "",
+      "line_3_cost_of_labor": "SDE-RELEVANT: labor classified as COGS vs OpEx varies by preparer",
+      "line_4_section_263a_costs": "",
+      "line_5_other_costs": "Extract attached statement detail",
+      "line_6_total": "Sum of lines 1-5",
+      "line_7_inventory_eoy": "",
+      "line_8_cogs": "line_6 minus line_7",
+      "inventory_method": "Cost / Lower of cost or market / Other"
+    },
+    "validation": [
+      "line_8 should match page 1 line 2",
+      "If line_1 and line_7 are both $0, flag if CIM claims inventory",
+      "Compare labor in COGS vs wages on page 1 line 8 — different preparers classify differently"
+    ]
+  },
+
+  "federal_statements": {
+    "description": "Attached statements detailing 'Other Deductions' and other line items",
+    "fields": {
+      "statement_1_other_deductions": "Line 19 detail — extract every line item and amount",
+      "statement_other_current_liabilities": "Schedule L line 18 detail",
+      "statement_m1_adjustments": "Books vs return differences",
+      "statement_m2_additions": "Other additions to retained earnings",
+      "statement_199a_information": "Section 199A (QBI) information"
+    },
+    "notes": "Statement 1 (Other Deductions) is the most important — it often contains insurance, professional fees, utilities, and other items that may be SDE-relevant."
+  },
+
+  "sde_relevant_fields_summary": {
+    "description": "Quick reference: fields that directly affect SDE reconstruction",
+    "always_add_back": [
+      "line_7_officer_compensation",
+      "line_13_interest",
+      "line_14_depreciation",
+      "line_17_pensions_profit_sharing (if owner benefit)"
+    ],
+    "check_for_addbacks": [
+      "statement_1 items: travel, meals, auto, telephone, charitable",
+      "schedule_m1 line_5: non-deductible expenses (may include owner disability insurance, etc.)",
+      "schedule_k line_16b: nondeductible expenses"
+    ],
+    "starting_point": "line_21_ordinary_business_income"
+  }
+}

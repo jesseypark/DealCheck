@@ -1,0 +1,113 @@
+{
+  "_description": "Extraction template for Form 1065 (Partnership). Read this before processing any 1065 tax return. Key differences from 1120-S: guaranteed payments, partner allocations, short-year handling.",
+
+  "form_1065_page1": {
+    "description": "Main return - income and deductions",
+    "fields": {
+      "tax_year": "Calendar year or fiscal year dates — CHECK FOR SHORT YEAR",
+      "business_name": "Line A",
+      "ein": "Line B",
+      "date_business_started": "Line C",
+      "address": "Street, City, State, ZIP",
+      "accounting_method": "Line E (Cash / Accrual / Other)",
+      "num_partners": "Line F",
+      "total_assets_eoy": "Line G",
+      "line_1a_gross_receipts": "Gross receipts or sales",
+      "line_1b_returns_allowances": "",
+      "line_1c_net_receipts": "",
+      "line_2_cogs": "From Form 1125-A",
+      "line_3_gross_profit": "",
+      "line_4_ordinary_income_other": "",
+      "line_5_net_farm_profit": "",
+      "line_6_net_gain_loss": "From Form 4797",
+      "line_7_other_income": "",
+      "line_8_total_income": "Sum of lines 3-7",
+      "line_9_salaries_wages": "EXCLUDES guaranteed payments",
+      "line_10_guaranteed_payments": "SDE-CRITICAL: partner guaranteed payments — always add back",
+      "line_11_repairs_maintenance": "",
+      "line_12_bad_debts": "",
+      "line_13_rent": "",
+      "line_14_taxes_licenses": "",
+      "line_15_interest": "SDE-CRITICAL: always add back",
+      "line_16a_depreciation": "SDE-CRITICAL: always add back",
+      "line_17_depletion": "",
+      "line_18_retirement_plans": "SDE-RELEVANT: check if partner benefit",
+      "line_19_employee_benefit_programs": "",
+      "line_20_other_deductions": "See attached statement",
+      "line_21_total_deductions": "",
+      "line_22_ordinary_business_income": "Starting point for SDE reconstruction",
+      "signer_name": "",
+      "signer_title": "",
+      "preparer_name": "",
+      "preparer_firm": ""
+    },
+    "validation": [
+      "line_8 = sum of lines 3-7",
+      "line_22 = line_8 - line_21",
+      "If short year: annualize revenue for comparison (actual_revenue * 12 / months_in_period)"
+    ]
+  },
+
+  "schedule_k": {
+    "description": "Partners' Distributive Share Items",
+    "fields": {
+      "line_1_ordinary_business_income": "Should match page 1 line 22",
+      "line_4c_guaranteed_payments_services": "SDE-CRITICAL: guaranteed payments for services",
+      "line_4d_guaranteed_payments_capital": "",
+      "line_5_interest_income": "",
+      "line_10_section_179": "",
+      "line_13a_contributions": "",
+      "line_16d_distributions": "",
+      "line_18a_tax_exempt_interest": ""
+    }
+  },
+
+  "schedule_k1": {
+    "description": "Partner's Share of Income — one per partner",
+    "fields": {
+      "partner_name": "",
+      "partner_type": "General / Limited",
+      "ownership_pct": "Profit %, Loss %, Capital %",
+      "line_1_ordinary_income": "Partner's share of line 22",
+      "line_4a_guaranteed_payments_services": "SDE-CRITICAL per partner",
+      "line_4b_guaranteed_payments_capital": "",
+      "line_19_distributions": ""
+    },
+    "notes": "For SDE: sum ALL partners' guaranteed payments + ordinary income. If there was a partner buyout mid-year, the guaranteed payments may reflect partial-year amounts for departing partner."
+  },
+
+  "schedule_l": {
+    "description": "Balance Sheets per Books",
+    "fields": {
+      "same_structure_as_1120s_schedule_l": true
+    },
+    "notes": "Identical field structure to 1120-S Schedule L."
+  },
+
+  "form_1125a": {
+    "description": "Cost of Goods Sold",
+    "fields": {
+      "same_structure_as_1120s_form_1125a": true
+    }
+  },
+
+  "short_year_handling": {
+    "description": "Partnerships sometimes have short tax years (e.g., partner buyout triggers new tax period)",
+    "rules": [
+      "Check dates on page 1 — if tax year is less than 12 months, this is a short year",
+      "Annualize: multiply reported figures by (12 / months_in_period) for trend comparison",
+      "Note ACTUAL figures separately from annualized for SDE — lender will want actual",
+      "Flag the short year prominently — it affects revenue trends and year-over-year comparisons"
+    ]
+  },
+
+  "sde_relevant_fields_summary": {
+    "always_add_back": [
+      "line_10_guaranteed_payments (ALL partners — this is the partnership equivalent of officer comp)",
+      "line_15_interest",
+      "line_16a_depreciation",
+      "line_18_retirement_plans (if partner benefit)"
+    ],
+    "starting_point": "line_22_ordinary_business_income"
+  }
+}

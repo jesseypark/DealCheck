@@ -13,12 +13,12 @@ DealCheck runs inside Claude Code as a reactive orchestration system. The main s
 ```
 Document arrives
     → Orchestrator preprocesses and establishes ground truth
-    → Extraction (inline or via document-parser agent)
-    → Verification (verifier agent cross-checks against sources)
+    → Extraction (orchestrator reads documents directly)
     → Orchestrator writes structured data to deal_state.json
     → Reactive loop: what's the highest-value next action?
-        ├── Financial data changed? → financial-analyst
-        ├── Market context needed? → market-researcher  
+        ├── Financial data changed? → financial-analyst agent
+        ├── Market context needed? → market-researcher agent
+        ├── SDE returned? → deterministic calculators (SBA, valuation, sensitivity)
         ├── Enough data for a scorecard? → generate inline
         ├── Gaps or conflicts? → generate questions inline
         └── Agent requested another agent? → evaluate and dispatch
@@ -26,20 +26,20 @@ Document arrives
     → Present summary
 ```
 
-### The Four Agents
+### The Two Agents
 
 | Agent | Why It Exists |
 |-------|--------------|
-| **document-parser** | Multi-document ingestion with cross-source conflict detection |
-| **financial-analyst** | SDE reconstruction, three valuation views, SBA feasibility, scenario modeling |
+| **financial-analyst** | SDE reconstruction, add-back legitimacy, qualitative interpretation of financials |
 | **market-researcher** | Web search for industry trends, competitors, comparable transactions |
-| **verifier** | Systematic cross-check of extracted data against source documents |
 
-The orchestrator verifies every agent's output before persisting anything.
+The orchestrator extracts all data directly from documents, verifies every agent's output before persisting anything, and generates scorecards and questions inline.
 
-**A note on the financial-analyst:** This agent can't reliably read numbers out of a complex JSON file on its own. On every deal, it pulled the wrong figure from deal_state.json or made one up when it couldn't find what it was looking for. But the analysis it builds *on top of* those numbers — interpreting trends, judging whether an add-back is legitimate, modeling SBA loan scenarios, spotting risks — is consistently the most valuable output in the system. The problem was never bad analysis, it was bad input retrieval. Ground-truth prompting (described below) mostly fixed this by feeding verified numbers directly into the prompt. Deterministic Python calculators are planned for v2 to handle all the number work, letting the agent focus entirely on what it's good at.
+**Retired agents:** document-parser (orchestrator extracts more reliably), verifier (0 spawns across 8 deals — orchestrator verification sufficient), deal-scorer and question-generator (failed on every run — fabricated numbers, built parallel schemas).
 
-### The Six Skills
+**A note on the financial-analyst:** This agent can't reliably read numbers out of a complex JSON file on its own. But the analysis it builds *on top of* numbers — interpreting trends, judging whether an add-back is legitimate, spotting risks — is consistently the most valuable output in the system. Ground-truth prompting (described below) fixed the input problem by feeding verified numbers directly into the prompt. Deterministic Python calculators now handle all arithmetic (SBA feasibility, valuations, sensitivity analysis), letting the agent focus entirely on what it's good at: interpretation.
+
+### The Seven Skills
 
 Skills are methodology files that encode domain expertise. Agents load them for context; the orchestrator also uses them directly for inline work.
 
@@ -51,6 +51,7 @@ Skills are methodology files that encode domain expertise. Agents load them for 
 | **financial-discrepancy** | Cross-source conflict detection patterns (CIM vs P&L vs tax returns) |
 | **market-research** | Industry research methodology, comparable transaction sourcing, competitive landscape |
 | **deal-scorecard** | Dimension scoring, red flag classification (critical/warning/watch), top 10 critical questions, HTML template |
+| **new-deal** | Simplified deal initiation — detects uploaded files, creates deal folder, hands off to reactive loop |
 
 Skills encode methodology, not data. The scorecard and question-generation skills were originally used by dedicated agents, but those agents failed consistently — the orchestrator now generates scorecards and questions inline using the same skills, with better results.
 
@@ -108,7 +109,7 @@ If your analysis uses a different number, STOP and explain the discrepancy.
 
 After implementing this, the financial-analyst's SDE reconstruction matched independently calculated figures within $364. Give it the right inputs and its analysis is solid.
 
-**Agent-triggered agents** — agents can now request work from other agents through the orchestration loop. The financial-analyst discovers a revenue discrepancy and requests the verifier. The market-researcher discovers a franchise and requests the financial-analyst to model franchise fees. The orchestrator evaluates each request and dispatches only when it would produce genuine value.
+**Agent-triggered agents** — agents can now request work from other agents through the orchestration loop. The market-researcher discovers a franchise and requests the financial-analyst to model franchise fees. The financial-analyst finds a salary data gap and requests market research. The orchestrator evaluates each request and dispatches only when it would produce genuine value.
 
 **Two-phase extract-then-analyze** — a performance postmortem revealed that interleaving document image reads with agent spawns caused context overflow (29% of image reads were duplicates after compaction). Separating extraction from analysis eliminated this entirely.
 
@@ -131,13 +132,18 @@ The system is agentic where it helps (reactive decision-making, agent-triggered 
 DealCheck/
 ├── CLAUDE.md                    # Orchestrator instructions (reactive loop, agent protocols)
 ├── .claude/
-│   ├── agents/                  # 4 specialist agent definitions
-│   └── skills/                  # 6 domain methodology files
+│   ├── agents/                  # 2 specialist agent definitions (financial-analyst, market-researcher)
+│   └── skills/                  # 7 domain methodology files
 ├── schema/
-│   └── deal_state_template.json # Knowledge model template
+│   ├── deal_state_template.json # Knowledge model template
+│   └── tax_templates/           # Structured extraction checklists (1120-S, 1065, 1040 Sch C)
 ├── scripts/
 │   ├── preprocess_pdf.py        # PDF → text + page images
-│   └── init_deal.py             # Initialize new deal folder structure
+│   ├── init_deal.py             # Initialize new deal folder structure
+│   ├── deal_utils.py            # Shared deal_state.json accessor layer
+│   ├── sba_calculator.py        # SBA loan feasibility, DSCR, max supportable price
+│   ├── valuation_calculator.py  # Three-view valuation (lender/CPA/buyer)
+│   └── sensitivity_analysis.py  # 5x5 DSCR matrix across SDE/price variations
 ├── docs/
 │   ├── METHODOLOGY.md           # SDE rules, valuation framework, red flags
 │   ├── KNOWLEDGE_MODEL.md       # 8-dimension schema specification
@@ -160,4 +166,4 @@ DealCheck/
 
 ## Status
 
-Active development. The system has been used to evaluate 6 real deals across commercial printing, drone entertainment, window coverings, auto repair, property management, and signage industries. The methodology, knowledge model, and orchestration patterns are stable. Deterministic financial calculators, tax return extraction templates, cross-deal comparison, and deal state versioning are planned for v2.
+Active development. The system has been used to evaluate 7 real deals across synthetic turf, commercial printing, drone entertainment, window coverings, auto repair, property management, fencing, and signage industries. The methodology, knowledge model, orchestration patterns, and deterministic calculators are stable. Cross-deal comparison and deal state versioning are planned for v2.
