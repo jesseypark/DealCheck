@@ -21,7 +21,8 @@ DealCheck/
 │   └── agents/                        # Specialist workers (READ-ONLY — return summaries, don't write files)
 │       ├── document-parser.md         # Extracts structured data from documents (rarely used — orchestrator extracts directly)
 │       ├── financial-analyst.md       # SDE reconstruction, add-back legitimacy, qualitative interpretation
-│       └── market-researcher.md       # Researches industry and competition via web search
+│       ├── market-researcher.md       # Researches industry trends, comps, regulatory, local economics via web search
+│       └── company-researcher.md      # Researches the specific company: BBB, reviews, court records, licensing, public records
 │
 ├── docs/                              # Project documentation
 │   ├── METHODOLOGY.md                 # Due diligence methodology — the authoritative reference
@@ -47,18 +48,24 @@ DealCheck/
 │   ├── deal_utils.py                  # Shared deal_state.json accessor layer
 │   ├── sba_calculator.py              # SBA loan feasibility, DSCR, max supportable price
 │   ├── valuation_calculator.py        # Three-view valuation (lender/CPA/buyer)
-│   └── sensitivity_analysis.py        # 5x5 DSCR sensitivity matrix across SDE/price variations
+│   ├── sensitivity_analysis.py        # 5x5 DSCR sensitivity matrix across SDE/price variations
+│   ├── generate_pnl_workbook.py       # Generate P&L + SDE Financial Model workbook (standalone)
+│   ├── generate_financial_model.py     # Generate Financial Model workbook (P&L + Financial Model + DSCR Sensitivity)
+│   ├── md_to_html.py                  # Convert markdown to styled HTML for Google Drive output
+│   ├── md_to_pdf.py                   # Convert markdown to PDF
+│   ├── md_to_docx.py                  # Convert markdown to DOCX
+│   └── md_to_gdoc_html.py            # Convert markdown to Google Docs-compatible HTML
 │
 └── deals/                             # NEVER COMMITTED — per-deal data
     └── [deal-name]/
-        ├── raw-documents/             # Original uploaded files
-        ├── preprocessed/              # Extracted text + page images from PDFs
+        ├── preprocessed/              # Extracted text + page images from PDFs (raw docs stay in Google Drive)
         │   └── [Document Name]/
         │       ├── full_text.txt      # Extracted text
         │       ├── extracted_text.json # Per-page text extraction
         │       └── page_NNN.png       # Rendered page images (zero-padded: 001, 002, ...)
         ├── extracted/                 # Structured extraction output (if used)
         ├── analysis/                  # Market research and other analysis output
+        ├── reports/                   # Full agent reports saved for user access (market-researcher, company-researcher, financial-analyst)
         ├── questions/                 # Generated question lists (.md) — produced INLINE by orchestrator
         ├── scorecards/                # Deal scorecard snapshots (.md + .html) — produced INLINE by orchestrator
         └── deal_state.json            # Current knowledge model state for this deal
@@ -105,11 +112,15 @@ reads CLAUDE.md → reads /docs/ → identifies the deal
     │    │    valuation_calculator.py        ◄────────│PARALL│    │
     │    │    sensitivity_analysis.py                 │  EL  │    │
     │    │                                            └──────┘    │
-    │    │  Business identity available?                           │
-    │    │  → market-researcher                                   │
-    │    │    searches: web for industry data                      │
-    │    │    returns: executive summary + detailed findings       │
-    │    │             + agent requests                            │
+    │    │  → Then: generate_financial_model.py                   │
+    │    │    (auto — if P&L + SDE workbook exists)               │
+    │    │  Business identity available?               ┌──────┐    │
+    │    │  → market-researcher                       │  IN  │    │
+    │    │    searches: web for industry data          │PARALL│    │
+    │    │    returns: executive summary + findings    │  EL  │    │
+    │    │  → company-researcher                      └──────┘    │
+    │    │    searches: web for company-specific intel             │
+    │    │    returns: company intelligence summary                │
     │    │                                                         │
     │    │  Agent returned AGENT_REQUESTS?                         │
     │    │  → Orchestrator evaluates, dispatches if warranted      │

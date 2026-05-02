@@ -2,12 +2,14 @@
 """
 Initialize a new deal folder with the standard directory structure and a fresh deal_state.json.
 
+Raw documents stay in Google Drive. This folder holds only preprocessed output,
+analysis, and deal state.
+
 Usage (run from the deal-analyzer project root):
     python scripts/init_deal.py "Smith HVAC" "https://bizbuysell.com/listing/12345"
 
 This creates:
     deals/smith-hvac/
-        raw-documents/
         preprocessed/
         extracted/
         analysis/
@@ -46,14 +48,14 @@ def init_deal(business_name: str, listing_url: str = ""):
         print("If you want to start over, delete the folder first.")
         sys.exit(1)
 
-    # Create subdirectories
+    # Create subdirectories (raw documents stay in Google Drive)
     subdirs = [
-        "raw-documents",
         "preprocessed",
         "extracted",
         "analysis",
         "questions",
         "scorecards",
+        "reports",
     ]
     for subdir in subdirs:
         os.makedirs(os.path.join(deal_dir, subdir), exist_ok=True)
@@ -77,9 +79,9 @@ def init_deal(business_name: str, listing_url: str = ""):
     print(f"  Subdirectories: {', '.join(subdirs)}")
     print(f"")
     print(f"Next steps:")
-    print(f"  1. Copy any documents into: {os.path.join(deal_dir, 'raw-documents')}/")
+    print(f"  1. Drop documents into the Google Drive deal folder")
     print(f"  2. Open Claude Code in the deal-analyzer project")
-    print(f"  3. Tell Claude: 'I have a new deal called {business_name}. Parse the documents in the raw-documents folder.'")
+    print(f"  3. Tell Claude: 'new deal {business_name}'")
 
 
 if __name__ == "__main__":

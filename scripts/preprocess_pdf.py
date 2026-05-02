@@ -12,14 +12,16 @@ text in metadata fields) because only visually rendered content survives the
 render-to-image step.
 
 Usage:
-    python scripts/preprocess_pdf.py deals/smith-hvac/raw-documents/tax-return-2024.pdf
+    python scripts/preprocess_pdf.py <path-to-pdf> --deal deals/<deal-folder>
 
-Output goes to deals/smith-hvac/preprocessed/
+The PDF can live anywhere (e.g., Google Drive sync folder). The --deal flag
+specifies where preprocessed output goes.
 
 Requirements (install once):
     pip install pymupdf Pillow
 """
 
+import argparse
 import json
 import os
 import sys
@@ -33,20 +35,14 @@ except ImportError:
     sys.exit(1)
 
 
-def preprocess_pdf(pdf_path: str):
+def preprocess_pdf(pdf_path: str, deal_dir: str = None):
     if not os.path.exists(pdf_path):
         print(f"Error: File not found: {pdf_path}")
         sys.exit(1)
 
-    # Determine output directory
-    # Expected path: deals/[deal-name]/raw-documents/filename.pdf
-    parts = pdf_path.split(os.sep)
-    try:
-        raw_idx = parts.index("raw-documents")
-        deal_dir = os.sep.join(parts[:raw_idx])
+    if deal_dir:
         preprocessed_dir = os.path.join(deal_dir, "preprocessed")
-    except ValueError:
-        # File isn't in expected location, use a sibling "preprocessed" folder
+    else:
         preprocessed_dir = os.path.join(os.path.dirname(pdf_path), "preprocessed")
 
     os.makedirs(preprocessed_dir, exist_ok=True)
@@ -123,9 +119,9 @@ def preprocess_pdf(pdf_path: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python scripts/preprocess_pdf.py <path-to-pdf>")
-        print("Example: python scripts/preprocess_pdf.py deals/smith-hvac/raw-documents/cim.pdf")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Preprocess a PDF for deal analysis")
+    parser.add_argument("pdf_path", help="Path to the PDF file (can be anywhere, e.g., Google Drive)")
+    parser.add_argument("--deal", dest="deal_dir", help="Deal folder for preprocessed output (e.g., deals/smith-hvac)")
+    args = parser.parse_args()
 
-    preprocess_pdf(sys.argv[1])
+    preprocess_pdf(args.pdf_path, args.deal_dir)

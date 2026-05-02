@@ -17,10 +17,12 @@ When the user says "new deal", drops files and asks you to analyze them, or any 
 
 Look for unprocessed files in these locations (check in order):
 1. Files the user explicitly referenced or uploaded in this message
-2. PDF/document files in the project root (`/Users/jesse/Documents/Projects/DealCheck/`)
-3. Files in a `deals/` subfolder that don't belong to an existing deal's `raw-documents/` directory
+2. Google Drive deal folders at `/Users/jesse/Library/CloudStorage/GoogleDrive-jparktb@gmail.com/My Drive/DealCheck/Deals/` — look for new folders or files not yet processed
+3. PDF/document files in the project root (`/Users/jesse/Documents/Projects/DealCheck/`)
 
 If no files are found, ask the user where the files are.
+
+If files were uploaded directly to the conversation (not via Google Drive), move them into the Google Drive deal folder so there's one source of truth for raw documents.
 
 ### Step 2 — Get the deal folder name
 
@@ -42,24 +44,13 @@ If the user provided a listing URL, include it:
 python3 scripts/init_deal.py "Business Name" "https://..."
 ```
 
-### Step 4 — Move files into raw-documents
+### Step 4 — Hand off to the standard pipeline
 
-Move all uploaded files into `deals/<deal-slug>/raw-documents/`.
+From here, follow the normal CLAUDE.md reactive orchestration loop. Raw documents stay in Google Drive — preprocessing reads directly from there and writes output to the local `deals/<deal>/preprocessed/` folder.
 
-### Step 5 — Hand off to the standard pipeline
-
-From here, follow the normal CLAUDE.md reactive orchestration loop:
-1. Preprocess all PDFs
+1. Preprocess all PDFs (from Google Drive path, output to local deal folder)
 2. Establish ground truth (read documents yourself)
 3. Phase 1: Extract all data
 4. Phase 2: Analyze
 
-The skill's job is done after Step 4. The orchestration loop handles the rest.
-
-## What This Replaces
-
-Previously, deal initiation required the user to either:
-- Run `python3 scripts/init_deal.py "Name" "URL"` manually
-- Tell the orchestrator the business name, listing URL, and which files to process
-
-Now: drop files, say "new deal", everything else is automatic.
+The skill's job is done after Step 3. The orchestration loop handles the rest.

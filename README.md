@@ -19,6 +19,7 @@ Document arrives
         ├── Financial data changed? → financial-analyst agent
         ├── Market context needed? → market-researcher agent
         ├── SDE returned? → deterministic calculators (SBA, valuation, sensitivity)
+        ├── P&L + SDE workbook exists? → generate financial model workbook
         ├── Enough data for a scorecard? → generate inline
         ├── Gaps or conflicts? → generate questions inline
         └── Agent requested another agent? → evaluate and dispatch
@@ -143,7 +144,8 @@ DealCheck/
 │   ├── deal_utils.py            # Shared deal_state.json accessor layer
 │   ├── sba_calculator.py        # SBA loan feasibility, DSCR, max supportable price
 │   ├── valuation_calculator.py  # Three-view valuation (lender/CPA/buyer)
-│   └── sensitivity_analysis.py  # 5x5 DSCR matrix across SDE/price variations
+│   ├── sensitivity_analysis.py  # 5x5 DSCR matrix across SDE/price variations
+│   └── generate_financial_model.py # Financial model workbook (SDE weighting, deal costs, DSCR sensitivity)
 ├── docs/
 │   ├── METHODOLOGY.md           # SDE rules, valuation framework, red flags
 │   ├── KNOWLEDGE_MODEL.md       # 8-dimension schema specification
