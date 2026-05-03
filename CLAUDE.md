@@ -267,7 +267,7 @@ After the financial-analyst returns SDE reconstruction, run the deterministic Py
 python3 scripts/sba_calculator.py --deal deals/<deal-folder>
 
 # Three valuation views (pass --replacement for buyer's realistic costs)
-python3 scripts/valuation_calculator.py --deal deals/<deal-folder> --replacement 87000
+python3 scripts/valuation_calculator.py --deal deals/<deal-folder> --replacement 100000
 
 # DSCR sensitivity matrix (5x5 grid across SDE and price variations)
 python3 scripts/sensitivity_analysis.py --deal deals/<deal-folder>

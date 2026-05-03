@@ -60,12 +60,20 @@ VALUATION RANGES:
   CPA-Validated:    $XXX,XXX - $XXX,XXX
   Buyer's Realistic:$XXX,XXX - $XXX,XXX
 
-SBA FEASIBILITY:
-  Loan Amount (80%):             $XXX,XXX
-  Annual Debt Service:           $XXX,XXX
-  DSCR:                          X.Xx
-  Verdict:                       [Feasible / Needs price reduction / Needs CPA validation]
+SBA FEASIBILITY (deal costs rolled into SBA loan per standard structure):
+  Total Project Cost:            $XXX,XXX   (PP + deal costs)
+  Deal Costs:                    $XXX,XXX   (attorney $15K + QofE $15K + WC $100K + guarantee fee)
+  SBA Loan Amount:               $XXX,XXX
+  Buyer Equity (out of pocket):  $XXX,XXX
+  Seller Note:                   $XXX,XXX   (6%, 10yr amort, 5yr balloon)
+  Annual Total Debt Service:     $XXX,XXX   (SBA + seller note)
+  Effective SDE (after $100K repl.): $XXX,XXX
+  DSCR (normal years):           X.Xx
+  DSCR (balloon year):           X.Xx
+  Verdict:                       [Feasible / Marginal / Does not pencil]
 ```
+
+The SBA feasibility section must use the standard deal structure from METHODOLOGY.md: deal costs rolled into SBA, $100K owner replacement, $20K attorney, $17K QofE, $100K working capital, 0yr standby, 5yr maturity (balloon), 10yr seller note amortization. Show both normal-year and balloon-year DSCR.
 
 If financial data is insufficient, state what's missing and what's needed to produce valuations.
 

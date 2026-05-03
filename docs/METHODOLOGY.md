@@ -6,8 +6,30 @@ This document is the authoritative reference for how this system evaluates busin
 
 The standard deal structure is:
 - 80% SBA 7(a) loan
-- 10% buyer equity (cash injection)
-- 10% seller financing (typically on standby for SBA requirements)
+- 10% buyer equity (cash injection, % of total project cost)
+- 10% seller financing (% of purchase price)
+
+### Standard Deal Structure Defaults
+
+All scorecards and financial models use these defaults unless the deal has specific terms that override them:
+
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| Owner Replacement Cost | $100,000/year | Deducted from SDE for DSCR calculation |
+| Attorney / Legal | $20,000 | Rolled into SBA loan as deal costs |
+| Quality of Earnings (QofE) | $17,000 | Rolled into SBA loan as deal costs |
+| Working Capital Reserve | $100,000 | Rolled into SBA loan as deal costs |
+| SBA Guarantee Fee Rate | 3% | Applied to SBA loan amount |
+| Seller Note Standby | 0 years | No standby period |
+| Seller Note Amortization | 10 years | |
+| Seller Note Maturity | 5 years | Creates balloon payment at Year 5 |
+| Seller Note Interest Rate | 6% | |
+| SBA Interest Rate | 10.5% | Update to current Prime + 2.75% |
+| SBA Loan Term | 10 years | |
+
+**Deal costs are rolled into the SBA loan**, increasing the Total Project Cost (TPC) beyond the purchase price. The SBA guarantee fee creates a circular reference (fee depends on SBA loan amount which depends on TPC which includes the fee) — this is resolved algebraically in the financial model script.
+
+**The 5-year balloon structure** means the seller note is amortized over 10 years but matures in Year 5, creating a balloon payment for the remaining balance. The DSCR analysis must evaluate both normal years and the balloon year separately.
 
 For smaller deals or when SBA terms don't work:
 - ROBS (Rollover for Business Startups) — using retirement funds to capitalize the acquisition
