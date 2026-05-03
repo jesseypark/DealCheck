@@ -167,12 +167,12 @@ DECISION CRITERIA (evaluate in order):
    → Spawn financial-analyst (ALWAYS — standing instruction)
    → Include ground-truth numbers + broker SDE context in the prompt
    → After agent returns: run deterministic calculators for SBA/valuation/sensitivity
-   → Generate financial model workbook (if P&L + SDE workbook exists)
+   → Generate financial model workbook: `generate_pnl_workbook.py --deal` then `generate_financial_model.py --deal`
 
 2. Has financial data changed AND analysis exists, but new source has higher confidence?
    → Re-run financial-analyst with updated ground-truth numbers
    → Re-run calculators with updated SDE
-   → Re-generate financial model workbook
+   → Re-generate financial model workbook (both steps)
 
 3. Has business identity or market data changed AND market research hasn't run?
    → Spawn market-researcher AND company-researcher in parallel
@@ -272,7 +272,8 @@ python3 scripts/valuation_calculator.py --deal deals/<deal-folder> --replacement
 # DSCR sensitivity matrix (5x5 grid across SDE and price variations)
 python3 scripts/sensitivity_analysis.py --deal deals/<deal-folder>
 
-# Financial model workbook (requires P&L + SDE workbook in deal folder)
+# Financial model workbook (two-step pipeline)
+python3 scripts/generate_pnl_workbook.py --deal deals/<deal-folder>
 python3 scripts/generate_financial_model.py --deal deals/<deal-folder>
 ```
 

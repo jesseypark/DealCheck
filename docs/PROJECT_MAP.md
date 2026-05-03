@@ -49,8 +49,8 @@ DealCheck/
 │   ├── sba_calculator.py              # SBA loan feasibility, DSCR, max supportable price
 │   ├── valuation_calculator.py        # Three-view valuation (lender/CPA/buyer)
 │   ├── sensitivity_analysis.py        # 5x5 DSCR sensitivity matrix across SDE/price variations
-│   ├── generate_pnl_workbook.py       # Generate P&L + SDE Financial Model workbook (standalone)
-│   ├── generate_financial_model.py     # Generate Financial Model workbook (P&L + Financial Model + DSCR Sensitivity)
+│   ├── generate_pnl_workbook.py       # Generate P&L + SDE workbook from deal_state.json (grouped add-backs, 3 SDE tiers)
+│   ├── generate_financial_model.py     # Add Financial Model + DSCR Sensitivity tabs to P&L + SDE workbook
 │   ├── md_to_html.py                  # Convert markdown to styled HTML for Google Drive output
 │   ├── md_to_pdf.py                   # Convert markdown to PDF
 │   ├── md_to_docx.py                  # Convert markdown to DOCX

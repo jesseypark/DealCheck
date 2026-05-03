@@ -117,7 +117,7 @@ def helper_font(ws, r, c):
 # Sheet 1: Financial Model
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_calculator(wb, deal_name=""):
+def build_calculator(wb, deal_name="", moderate_sde_row=None, pnl_years=None):
     ws = wb.active
     ws.title = "Financial Model"
     ws.sheet_properties.tabColor = "1F4E79"
@@ -141,14 +141,31 @@ def build_calculator(wb, deal_name=""):
         ws.cell(row=r, column=c, value=h)
     style_header(ws, r, 1, 4)
 
-    # SDE values pulled from P&L + SDE tab (row 58, cols B/C/D/E)
+    # Build periods from the P&L + SDE tab's actual years and moderate SDE row
     pnl = "'P&L + SDE'"
-    periods = [
-        ("2023", f"={pnl}!B58", 0.00),
-        ("2024", f"={pnl}!C58", 0.25),
-        ("2025", f"={pnl}!D58", 0.35),
-        ("TTM (Apr 2026)", f"={pnl}!E58", 0.40),
-    ]
+    sde_row = moderate_sde_row or 59
+
+    if pnl_years and len(pnl_years) >= 2:
+        n = len(pnl_years)
+        periods = []
+        for i, (label, col) in enumerate(pnl_years):
+            col_letter = get_column_letter(col)
+            sde_ref = f"={pnl}!{col_letter}{sde_row}"
+            if n == 2:
+                weight = 0.40 if i == 0 else 0.60
+            elif n == 3:
+                weight = [0.15, 0.35, 0.50][i]
+            elif n == 4:
+                weight = [0.00, 0.25, 0.35, 0.40][i]
+            else:
+                weight = round(1.0 / n, 2) if i < n - 1 else round(1.0 - round(1.0 / n, 2) * (n - 1), 2)
+            periods.append((label, sde_ref, weight))
+    else:
+        periods = [
+            ("Year 1", f"={pnl}!B{sde_row}", 0.40),
+            ("Year 2", f"={pnl}!C{sde_row}", 0.60),
+        ]
+
     sde_start = 6
     for i, (label, sde_ref, weight) in enumerate(periods):
         r = sde_start + i
@@ -158,7 +175,7 @@ def build_calculator(wb, deal_name=""):
         fml(ws, r, 4, f"=B{r}*C{r}", DOLLAR_FMT)
         for c in range(1, 5):
             ws.cell(row=r, column=c).border = THIN_BORDER
-    sde_end = sde_start + len(periods) - 1  # 9
+    sde_end = sde_start + len(periods) - 1
 
     r = sde_end + 1  # 10
     lbl(ws, r, 1, "Weight Check (must = 100%)", indent=True)
@@ -692,10 +709,34 @@ def build_sensitivity(wb, refs):
     ws.freeze_panes = "A4"
 
 
+def find_moderate_sde_row(ws):
+    """Scan the P&L + SDE sheet for the Moderate SDE row."""
+    for row in ws.iter_rows(min_col=1, max_col=1):
+        cell = row[0]
+        if cell.value and isinstance(cell.value, str) and "moderate" in cell.value.lower():
+            return cell.row
+    return None
+
+
+def find_pnl_years(ws):
+    """Find the year columns from the P&L + SDE header row (row 4)."""
+    years = []
+    for col in range(2, ws.max_column + 1):
+        val = ws.cell(row=4, column=col).value
+        if val and str(val).strip().isdigit():
+            years.append((str(val).strip(), col))
+        elif val and isinstance(val, str) and val.strip().startswith("TTM"):
+            years.append((val.strip(), col))
+    return years
+
+
 def copy_pnl_sheet(source_path, target_wb):
-    """Copy the 'P&L + SDE' sheet from the Financial Model workbook."""
+    """Copy the 'P&L + SDE' sheet and return (moderate_sde_row, years)."""
     src_wb = load_workbook(source_path)
     src_ws = src_wb["P&L + SDE"]
+
+    moderate_row = find_moderate_sde_row(src_ws)
+    years = find_pnl_years(src_ws)
 
     dst_ws = target_wb.create_sheet("P&L + SDE", 0)
     dst_ws.sheet_properties.tabColor = "2F5233"
@@ -719,6 +760,7 @@ def copy_pnl_sheet(source_path, target_wb):
         dst_ws.freeze_panes = src_ws.freeze_panes
 
     src_wb.close()
+    return moderate_row, years
 
 
 def main():
@@ -744,12 +786,16 @@ def main():
     output = deal_dir / f"{deal_name} - Financial Model.xlsx"
 
     wb = Workbook()
-    copy_pnl_sheet(pnl_path, wb)
+    moderate_row, pnl_years = copy_pnl_sheet(pnl_path, wb)
+    if moderate_row:
+        print(f"Found Moderate SDE at row {moderate_row}")
+    else:
+        print("Warning: could not find Moderate SDE row — defaulting to row 59")
     if "Sheet" in wb.sheetnames:
         del wb["Sheet"]
     dc_ws = wb.create_sheet("Financial Model")
     wb.active = wb.sheetnames.index("Financial Model")
-    refs = build_calculator(wb, deal_name)
+    refs = build_calculator(wb, deal_name, moderate_row, pnl_years)
     build_sensitivity(wb, refs)
     wb.save(str(output))
     print(f"Saved: {output}")
